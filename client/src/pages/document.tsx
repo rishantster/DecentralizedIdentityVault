@@ -9,10 +9,10 @@ import { WalletConnect } from "@/components/wallet-connect";
 import { Share2 } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 import { type WalletType } from "@/lib/web3";
+import { useWallet } from "@/lib/wallet-context";
 
 export default function DocumentPage({ params }: { params: { id: string } }) {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletType, setWalletType] = useState<WalletType | null>(null);
+  const { address, walletType, connect } = useWallet();
   const { toast } = useToast();
 
   const { data: document } = useQuery<Document>({
@@ -26,22 +26,22 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
   const signatureMutation = useMutation({
     mutationFn: async () => {
-      if (!walletAddress || !document || !walletType) return;
+      if (!address || !document || !walletType) return;
 
       const message = `Signing document ${document.id} - ${document.name}`;
-      const signature = await signMessage(message, walletAddress, walletType);
+      const signature = await signMessage(message, address, walletType);
 
       if (!signature) return;
 
       const timestamp = new Date().toISOString();
 
       await apiRequest("POST", `/api/documents/${document.id}/signatures`, {
-        signerAddress: walletAddress,
+        signerAddress: address,
         signature,
         timestamp,
       });
 
-      const updatedContent = `${document.content}\n\nSigned by ${walletAddress} at ${timestamp}`;
+      const updatedContent = `${document.content}\n\nSigned by ${address} at ${timestamp}`;
       await apiRequest("POST", `/api/documents/${document.id}`, {
         ...document,
         content: updatedContent,
@@ -64,8 +64,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
   });
 
   const handleWalletConnect = (address: string, type: WalletType) => {
-    setWalletAddress(address);
-    setWalletType(type);
+    connect(address, type);
   };
 
   if (!document) return null;
@@ -89,7 +88,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               <Share2 className="h-4 w-4" />
               Share
             </Button>
-            {!walletAddress ? (
+            {!address ? (
               <WalletConnect onConnect={handleWalletConnect} />
             ) : (
               <Button

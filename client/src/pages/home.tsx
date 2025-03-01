@@ -9,10 +9,10 @@ import { FileText, Shield, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { type WalletType } from "@/lib/web3";
+import { useWallet } from "@/lib/wallet-context";
 
 export default function Home() {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [walletType, setWalletType] = useState<WalletType | null>(null);
+  const { address, walletType, connect } = useWallet();
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [creating, setCreating] = useState(false);
@@ -20,7 +20,7 @@ export default function Home() {
   const { toast } = useToast();
 
   async function handleCreateDocument() {
-    if (!walletAddress || !content.trim() || !name.trim()) {
+    if (!address || !content.trim() || !name.trim()) {
       toast({
         title: "Missing information",
         description: "Please fill in all fields",
@@ -34,8 +34,8 @@ export default function Home() {
       const res = await apiRequest("POST", "/api/documents", {
         name,
         content,
-        createdBy: walletAddress,
-        walletType // Added walletType to the request
+        createdBy: address,
+        walletType
       });
 
       const document = await res.json();
@@ -52,8 +52,7 @@ export default function Home() {
   }
 
   const handleWalletConnect = (address: string, type: WalletType) => {
-    setWalletAddress(address);
-    setWalletType(type);
+    connect(address, type);
   };
 
   return (
@@ -78,7 +77,7 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!walletAddress ? (
+              {!address ? (
                 <div className="text-center py-4">
                   <WalletConnect onConnect={handleWalletConnect} />
                 </div>
@@ -86,7 +85,7 @@ export default function Home() {
                 <>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} ({walletType})
+                      Connected: {address.slice(0, 6)}...{address.slice(-4)} ({walletType})
                     </p>
                     <Input
                       placeholder="Document Title"
