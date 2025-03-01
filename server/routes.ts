@@ -22,6 +22,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(document);
   });
 
+  app.get("/api/documents/creator/:address", async (req, res) => {
+    const documents = await storage.getDocumentsByCreator(req.params.address);
+    res.json(documents);
+  });
+
   app.get("/api/documents/share/:link", async (req, res) => {
     const document = await storage.getDocumentByShareableLink(req.params.link);
     if (!document) {

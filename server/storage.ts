@@ -5,6 +5,7 @@ export interface IStorage {
   createDocument(doc: InsertDocument): Promise<Document>;
   getDocument(id: number): Promise<Document | undefined>;
   getDocumentByShareableLink(link: string): Promise<Document | undefined>;
+  getDocumentsByCreator(address: string): Promise<Document[]>;
   getSignatures(documentId: number): Promise<Signature[]>;
   addSignature(signature: InsertSignature): Promise<Signature>;
   updateDocument(id: number, updates: Partial<Document>): Promise<Document>;
@@ -44,6 +45,12 @@ export class MemStorage implements IStorage {
     return Array.from(this.documents.values()).find(
       (doc) => doc.shareableLink === link
     );
+  }
+
+  async getDocumentsByCreator(address: string): Promise<Document[]> {
+    return Array.from(this.documents.values())
+      .filter(doc => doc.createdBy === address)
+      .sort((a, b) => b.id - a.id); // Sort by id descending (newest first)
   }
 
   async getSignatures(documentId: number): Promise<Signature[]> {
