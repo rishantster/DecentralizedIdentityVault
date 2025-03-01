@@ -35,6 +35,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
       const timestamp = new Date().toISOString();
 
+      // Add signature to the signatures collection
       await apiRequest("POST", `/api/documents/${docData.id}/signatures`, {
         signerAddress: address,
         signature,
@@ -51,16 +52,13 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
       ];
 
       const signatureBlocks = updatedSignatures.map(sig => 
-        `Signer: ${sig.signerAddress}
-Time: ${new Date(sig.timestamp).toLocaleString()}
-Signature: ${sig.signature}
-----------------------------------------`
+        `Signer: ${sig.signerAddress}\nTime: ${new Date(sig.timestamp).toLocaleString()}\nSignature: ${sig.signature}\n----------------------------------------`
       ).join('\n\n');
 
       const updatedContent = `${baseContent || docData.content}\n\n=== SIGNATURES ===\n\n${signatureBlocks}`;
 
-      await apiRequest("POST", `/api/documents/${docData.id}`, {
-        ...docData,
+      // Update the document content to include the new signature
+      await apiRequest("PATCH", `/api/documents/${docData.id}`, {
         content: updatedContent,
       });
 

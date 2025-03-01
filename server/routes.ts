@@ -9,7 +9,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!result.success) {
       return res.status(400).json({ message: "Invalid document data" });
     }
-    
+
     const document = await storage.createDocument(result.data);
     res.json(document);
   });
@@ -40,13 +40,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ...req.body,
       documentId: Number(req.params.id)
     });
-    
+
     if (!result.success) {
       return res.status(400).json({ message: "Invalid signature data" });
     }
 
     const signature = await storage.addSignature(result.data);
     res.json(signature);
+  });
+
+  // Update document content
+  app.patch("/api/documents/:id", async (req, res) => {
+    const document = await storage.getDocument(Number(req.params.id));
+    if (!document) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    const updatedDocument = await storage.updateDocument(Number(req.params.id), {
+      content: req.body.content
+    });
+
+    res.json(updatedDocument);
   });
 
   const httpServer = createServer(app);

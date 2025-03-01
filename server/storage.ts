@@ -7,6 +7,7 @@ export interface IStorage {
   getDocumentByShareableLink(link: string): Promise<Document | undefined>;
   getSignatures(documentId: number): Promise<Signature[]>;
   addSignature(signature: InsertSignature): Promise<Signature>;
+  updateDocument(id: number, updates: Partial<Document>): Promise<Document>;
 }
 
 export class MemStorage implements IStorage {
@@ -55,15 +56,30 @@ export class MemStorage implements IStorage {
     const id = this.currentSigId++;
     const newSignature: Signature = { ...signature, id };
     this.signatures.set(id, newSignature);
-    
+
     // Update document status
     const document = this.documents.get(signature.documentId);
     if (document) {
       document.status = 'signed';
       this.documents.set(document.id, document);
     }
-    
+
     return newSignature;
+  }
+
+  async updateDocument(id: number, updates: Partial<Document>): Promise<Document> {
+    const document = this.documents.get(id);
+    if (!document) {
+      throw new Error('Document not found');
+    }
+
+    const updatedDocument = {
+      ...document,
+      ...updates
+    };
+
+    this.documents.set(id, updatedDocument);
+    return updatedDocument;
   }
 }
 
