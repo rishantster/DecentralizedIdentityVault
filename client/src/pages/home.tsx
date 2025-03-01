@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { WalletConnect } from "@/components/wallet-connect";
 import { Header } from "@/components/header";
@@ -13,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { type WalletType } from "@/lib/web3";
 import { useWallet } from "@/lib/wallet-context";
 import type { Document } from "@shared/schema";
+import MDEditor from '@uiw/react-md-editor';
 
 export default function Home() {
   const { address, walletType, connect } = useWallet();
@@ -122,12 +122,14 @@ export default function Home() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                       />
-                      <Textarea
-                        placeholder="Enter your document content here..."
-                        className="min-h-[200px]"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                      />
+                      <div data-color-mode="light">
+                        <MDEditor
+                          value={content}
+                          onChange={(value) => setContent(value || '')}
+                          preview="edit"
+                          height={400}
+                        />
+                      </div>
                       <Button
                         className="w-full"
                         onClick={handleCreateDocument}

@@ -11,6 +11,7 @@ import { Share2, Download, Shield, CheckCircle2, XCircle } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 import { type WalletType } from "@/lib/web3";
 import { useWallet } from "@/lib/wallet-context";
+import MDEditor from '@uiw/react-md-editor';
 
 interface VerificationStatus {
   [key: number]: boolean;
@@ -228,9 +229,9 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               </div>
             )}
             <div className="border rounded-lg p-4 bg-muted/50">
-              <pre className="whitespace-pre-wrap break-words font-mono text-sm">
-                {docData.content}
-              </pre>
+              <div data-color-mode="light">
+                <MDEditor.Markdown source={docData.content} />
+              </div>
             </div>
           </CardContent>
         </Card>
