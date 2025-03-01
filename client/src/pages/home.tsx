@@ -8,9 +8,11 @@ import { WalletConnect } from "@/components/wallet-connect";
 import { FileText, Shield, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { type WalletType } from "@/lib/web3";
 
 export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [walletType, setWalletType] = useState<WalletType | null>(null);
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [creating, setCreating] = useState(false);
@@ -32,7 +34,8 @@ export default function Home() {
       const res = await apiRequest("POST", "/api/documents", {
         name,
         content,
-        createdBy: walletAddress
+        createdBy: walletAddress,
+        walletType // Added walletType to the request
       });
 
       const document = await res.json();
@@ -47,6 +50,11 @@ export default function Home() {
       setCreating(false);
     }
   }
+
+  const handleWalletConnect = (address: string, type: WalletType) => {
+    setWalletAddress(address);
+    setWalletType(type);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
@@ -72,13 +80,13 @@ export default function Home() {
             <CardContent className="space-y-4">
               {!walletAddress ? (
                 <div className="text-center py-4">
-                  <WalletConnect onConnect={setWalletAddress} />
+                  <WalletConnect onConnect={handleWalletConnect} />
                 </div>
               ) : (
                 <>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                      Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} ({walletType})
                     </p>
                     <Input
                       placeholder="Document Title"
@@ -94,7 +102,7 @@ export default function Home() {
                       onChange={(e) => setContent(e.target.value)}
                     />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full"
                     onClick={handleCreateDocument}
                     disabled={creating || !content.trim() || !name.trim()}

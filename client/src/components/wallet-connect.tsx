@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useCallback, useState } from "react";
-import { connectWallet } from "@/lib/web3";
+import { connectWallet, type WalletType } from "@/lib/web3";
 import { Wallet } from "lucide-react";
+import { SiPolkadot } from "react-icons/si";
 
-export function WalletConnect({ onConnect }: { onConnect: (address: string) => void }) {
+export function WalletConnect({ onConnect }: { onConnect: (address: string, type: WalletType) => void }) {
   const [connecting, setConnecting] = useState(false);
 
-  const handleConnect = useCallback(async () => {
+  const handleConnect = useCallback(async (type: WalletType) => {
     setConnecting(true);
     try {
-      const address = await connectWallet();
+      const address = await connectWallet(type);
       if (address) {
-        onConnect(address);
+        onConnect(address, type);
       }
     } finally {
       setConnecting(false);
@@ -19,14 +20,40 @@ export function WalletConnect({ onConnect }: { onConnect: (address: string) => v
   }, [onConnect]);
 
   return (
-    <Button 
-      onClick={handleConnect} 
-      disabled={connecting}
-      variant="outline"
-      className="gap-2"
-    >
-      <Wallet className="h-4 w-4" />
-      {connecting ? "Connecting..." : "Connect Wallet"}
-    </Button>
+    <div className="flex flex-col gap-2">
+      <Button 
+        onClick={() => handleConnect('metamask')} 
+        disabled={connecting}
+        variant="outline"
+        className="gap-2"
+      >
+        <Wallet className="h-4 w-4" />
+        {connecting ? "Connecting..." : "Connect with MetaMask"}
+      </Button>
+
+      <Button 
+        onClick={() => handleConnect('polkadot')} 
+        disabled={connecting}
+        variant="outline"
+        className="gap-2"
+      >
+        <SiPolkadot className="h-4 w-4" />
+        {connecting ? "Connecting..." : "Connect with Polkadot.js"}
+      </Button>
+
+      <Button 
+        onClick={() => handleConnect('sporran')} 
+        disabled={connecting}
+        variant="outline"
+        className="gap-2"
+      >
+        <img 
+          src="https://wallet.chainx.org/static/media/logo.12bd7143.svg" 
+          alt="Sporran" 
+          className="h-4 w-4"
+        />
+        {connecting ? "Connecting..." : "Connect with Sporran"}
+      </Button>
+    </div>
   );
 }
