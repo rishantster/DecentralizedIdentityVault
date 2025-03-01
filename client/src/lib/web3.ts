@@ -102,8 +102,31 @@ async function connectMetaMask(): Promise<string | null> {
   }
 
   try {
+    // Request permission to connect and get accounts
+    await window.ethereum.request({
+      method: "wallet_requestPermissions",
+      params: [{ eth_accounts: {} }]
+    });
+
+    // This will trigger MetaMask's account selector
     const accounts = await window.ethereum.request({
       method: "eth_requestAccounts"
+    });
+
+    if (!accounts || accounts.length === 0) {
+      toast({
+        title: "No account selected",
+        description: "Please select an account in MetaMask",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    // Listen for account changes
+    window.ethereum.on('accountsChanged', function (accounts: string[]) {
+      if (accounts.length === 0) {
+        window.location.reload(); // Refresh the page when user disconnects
+      }
     });
 
     return accounts[0];
