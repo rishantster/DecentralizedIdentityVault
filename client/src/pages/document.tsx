@@ -7,15 +7,20 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { signMessage, verifyDocumentSignature } from "@/lib/web3";
 import { WalletConnect } from "@/components/wallet-connect";
 import { Header } from "@/components/header";
-import { Share2, Download, Shield } from "lucide-react";
+import { Share2, Download, Shield, CheckCircle2, XCircle } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 import { type WalletType } from "@/lib/web3";
 import { useWallet } from "@/lib/wallet-context";
+
+interface VerificationStatus {
+  [key: number]: boolean;
+}
 
 export default function DocumentPage({ params }: { params: { id: string } }) {
   const { address, walletType, connect } = useWallet();
   const { toast } = useToast();
   const [verifying, setVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({});
 
   const { data: docData } = useQuery<Document>({
     queryKey: [`/api/documents/${params.id}`],
@@ -114,9 +119,16 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
             sig.signature,
             'metamask' // Currently only supporting MetaMask verification
           );
-          return { ...sig, isValid };
+          return { id: sig.id, isValid };
         })
       );
+
+      const newVerificationStatus = results.reduce((acc, { id, isValid }) => {
+        acc[id] = isValid;
+        return acc;
+      }, {} as VerificationStatus);
+
+      setVerificationStatus(newVerificationStatus);
 
       const validCount = results.filter(r => r.isValid).length;
       toast({
@@ -141,77 +153,88 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     <>
       <Header showBack />
       <div className="container mx-auto p-4 space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{docData.name}</CardTitle>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `${window.location.origin}/share/${docData.shareableLink}`
-                      );
-                      toast({ title: "Share link copied to clipboard" });
-                    }}
-                  >
-                    <Share2 className="h-4 w-4" />
-                    Share
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={handleDownload}
-                  >
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Button>
-                  {signatures.length > 0 && (
-                    <Button
-                      variant="outline"
-                      className="gap-2"
-                      onClick={handleVerifySignatures}
-                      disabled={verifying}
-                    >
-                      <Shield className="h-4 w-4" />
-                      {verifying ? "Verifying..." : "Verify Signatures"}
-                    </Button>
-                  )}
-                  {!address ? (
-                    <WalletConnect onConnect={handleWalletConnect} />
-                  ) : (
-                    <Button
-                      onClick={() => signatureMutation.mutate()}
-                      disabled={signatureMutation.isPending}
-                    >
-                      {signatureMutation.isPending ? "Signing..." : "Sign Document"}
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {signatures.length > 0 && (
-                  <div className="mb-4 p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-medium mb-2">Signatures:</h3>
-                    <div className="grid gap-2">
-                      {signatures.map((sig) => (
-                        <div key={sig.id} className="text-sm text-muted-foreground break-all">
-                          <span className="font-medium">Signer:</span> {sig.signerAddress}
-                          <br />
-                          <span className="font-medium">Time:</span> {new Date(sig.timestamp).toLocaleString()}
-                        </div>
-                      ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{docData.name}</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/share/${docData.shareableLink}`
+                  );
+                  toast({ title: "Share link copied to clipboard" });
+                }}
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleDownload}
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+              {signatures.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleVerifySignatures}
+                  disabled={verifying}
+                >
+                  <Shield className="h-4 w-4" />
+                  {verifying ? "Verifying..." : "Verify Signatures"}
+                </Button>
+              )}
+              {!address ? (
+                <WalletConnect onConnect={handleWalletConnect} />
+              ) : (
+                <Button
+                  onClick={() => signatureMutation.mutate()}
+                  disabled={signatureMutation.isPending}
+                >
+                  {signatureMutation.isPending ? "Signing..." : "Sign Document"}
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {signatures.length > 0 && (
+              <div className="mb-4 p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-medium mb-2">Signatures:</h3>
+                <div className="grid gap-2">
+                  {signatures.map((sig) => (
+                    <div key={sig.id} className="text-sm text-muted-foreground break-all flex items-start gap-2">
+                      <div className="mt-1">
+                        {verificationStatus[sig.id] !== undefined && (
+                          verificationStatus[sig.id] ? (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-500" />
+                          )
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium">Signer:</span> {sig.signerAddress}
+                        <br />
+                        <span className="font-medium">Time:</span> {new Date(sig.timestamp).toLocaleString()}
+                      </div>
                     </div>
-                  </div>
-                )}
-                <div className="border rounded-lg p-4 bg-muted/50">
-                  <pre className="whitespace-pre-wrap break-words font-mono text-sm">
-                    {docData.content}
-                  </pre>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            )}
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <pre className="whitespace-pre-wrap break-words font-mono text-sm">
+                {docData.content}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
