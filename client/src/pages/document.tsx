@@ -15,27 +15,27 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
   const { address, walletType, connect } = useWallet();
   const { toast } = useToast();
 
-  const { data: document } = useQuery<Document>({
+  const { data: docData } = useQuery<Document>({
     queryKey: [`/api/documents/${params.id}`],
   });
 
   const { data: signatures = [] } = useQuery<Signature[]>({
     queryKey: [`/api/documents/${params.id}/signatures`],
-    enabled: !!document,
+    enabled: !!docData,
   });
 
   const signatureMutation = useMutation({
     mutationFn: async () => {
-      if (!address || !document || !walletType) return;
+      if (!address || !docData || !walletType) return;
 
-      const message = `Signing document ${document.id} - ${document.name}`;
+      const message = `Signing document ${docData.id} - ${docData.name}`;
       const signature = await signMessage(message, address, walletType);
 
       if (!signature) return;
 
       const timestamp = new Date().toISOString();
 
-      await apiRequest("POST", `/api/documents/${document.id}/signatures`, {
+      await apiRequest("POST", `/api/documents/${docData.id}/signatures`, {
         signerAddress: address,
         signature,
         timestamp,
@@ -49,14 +49,14 @@ Time: ${new Date(timestamp).toLocaleString()}
 Signature: ${signature}
 ----------------------------------------`;
 
-      const updatedContent = `${document.content}${signatureBlock}`;
-      await apiRequest("POST", `/api/documents/${document.id}`, {
-        ...document,
+      const updatedContent = `${docData.content}${signatureBlock}`;
+      await apiRequest("POST", `/api/documents/${docData.id}`, {
+        ...docData,
         content: updatedContent,
       });
 
-      await queryClient.invalidateQueries({ queryKey: [`/api/documents/${document.id}`] });
-      await queryClient.invalidateQueries({ queryKey: [`/api/documents/${document.id}/signatures`] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/documents/${docData.id}`] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/documents/${docData.id}/signatures`] });
     },
     onSuccess: () => {
       toast({
@@ -76,36 +76,36 @@ Signature: ${signature}
   };
 
   const handleDownload = () => {
-    if (!document) return;
+    if (!docData) return;
 
     // Create a blob with the document content
-    const blob = new Blob([document.content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([docData.content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
 
     // Create a temporary link and trigger download
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${document.name}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const link = window.document.createElement('a');
+    link.href = url;
+    link.download = `${docData.name}.txt`;
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
-  if (!document) return null;
+  if (!docData) return null;
 
   return (
     <div className="container mx-auto p-4 space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>{document.name}</CardTitle>
+          <CardTitle>{docData.name}</CardTitle>
           <div className="flex gap-2">
             <Button
               variant="outline"
               className="gap-2"
               onClick={() => {
                 navigator.clipboard.writeText(
-                  `${window.location.origin}/share/${document.shareableLink}`
+                  `${window.location.origin}/share/${docData.shareableLink}`
                 );
                 toast({ title: "Share link copied to clipboard" });
               }}
@@ -147,7 +147,7 @@ Signature: ${signature}
             </div>
           )}
           <div className="border rounded-lg p-4 bg-muted/50 whitespace-pre-wrap font-mono text-sm">
-            {document.content}
+            {docData.content}
           </div>
         </CardContent>
       </Card>
