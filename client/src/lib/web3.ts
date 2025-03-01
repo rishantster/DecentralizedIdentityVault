@@ -9,16 +9,41 @@ declare global {
 
 export type WalletType = 'metamask' | 'polkadot' | 'sporran';
 
+export async function verifyWalletOwnership(address: string, type: WalletType): Promise<boolean> {
+  const message = `Sign this message to verify your identity with Decentralized Identity Vault\nTimestamp: ${Date.now()}`;
+  const signature = await signMessage(message, address, type);
+  return signature !== null;
+}
+
 export async function connectWallet(type: WalletType): Promise<string | null> {
+  let address: string | null = null;
+
   switch (type) {
     case 'metamask':
-      return connectMetaMask();
+      address = await connectMetaMask();
+      break;
     case 'polkadot':
     case 'sporran':
-      return connectPolkadot(type);
+      address = await connectPolkadot(type);
+      break;
     default:
       return null;
   }
+
+  if (!address) return null;
+
+  // Verify wallet ownership through signature
+  const isVerified = await verifyWalletOwnership(address, type);
+  if (!isVerified) {
+    toast({
+      title: "Verification failed",
+      description: "Please sign the message to verify your identity",
+      variant: "destructive"
+    });
+    return null;
+  }
+
+  return address;
 }
 
 async function connectMetaMask(): Promise<string | null> {
