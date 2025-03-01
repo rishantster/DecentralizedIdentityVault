@@ -1,8 +1,11 @@
-import { useState, useRef } from "react";
-import { Document as PDFDocument, Page } from "react-pdf";
+import { useState, useRef, useEffect } from "react";
+import { Document as PDFDocument, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+
+// Initialize PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface DocumentViewerProps {
   documentUrl: string;
