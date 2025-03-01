@@ -4,13 +4,14 @@ import { DocumentViewer } from "@/components/document-viewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { signMessage } from "@/lib/web3";
 import { WalletConnect } from "@/components/wallet-connect";
 import { base64ToBlob, addSignatureToDocument } from "@/lib/pdf";
 import { Share2 } from "lucide-react";
+import type { Document, Signature } from "@shared/schema";
 
-export default function Document({ params }: { params: { id: string } }) {
+export default function DocumentPage({ params }: { params: { id: string } }) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [signaturePosition, setSignaturePosition] = useState<{
     x: number;
@@ -19,11 +20,11 @@ export default function Document({ params }: { params: { id: string } }) {
   } | null>(null);
   const { toast } = useToast();
 
-  const { data: document } = useQuery({
+  const { data: document } = useQuery<Document>({
     queryKey: [`/api/documents/${params.id}`],
   });
 
-  const { data: signatures } = useQuery({
+  const { data: signatures = [] } = useQuery<Signature[]>({
     queryKey: [`/api/documents/${params.id}/signatures`],
     enabled: !!document,
   });
@@ -36,11 +37,11 @@ export default function Document({ params }: { params: { id: string } }) {
         signaturePosition
       )}`;
       const signature = await signMessage(message, walletAddress);
-      
+
       if (!signature) return;
 
       const timestamp = new Date().toISOString();
-      
+
       await apiRequest("POST", `/api/documents/${document.id}/signatures`, {
         signerAddress: walletAddress,
         signature,
@@ -58,6 +59,10 @@ export default function Document({ params }: { params: { id: string } }) {
         ...document,
         content: updatedPdf,
       });
+
+      // Invalidate queries to refetch data
+      await queryClient.invalidateQueries({ queryKey: [`/api/documents/${document.id}`] });
+      await queryClient.invalidateQueries({ queryKey: [`/api/documents/${document.id}/signatures`] });
     },
     onSuccess: () => {
       toast({
@@ -108,7 +113,7 @@ export default function Document({ params }: { params: { id: string } }) {
           </div>
         </CardHeader>
         <CardContent>
-          {signatures && signatures.length > 0 && (
+          {signatures.length > 0 && (
             <div className="mb-4">
               <h3 className="font-medium mb-2">Signatures:</h3>
               <ul className="text-sm text-muted-foreground">
