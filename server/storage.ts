@@ -17,7 +17,11 @@ export class DatabaseStorage implements IStorage {
   async createDocument(doc: InsertDocument): Promise<Document> {
     const [document] = await db
       .insert(documents)
-      .values(doc)
+      .values({
+        ...doc,
+        shareableLink: nanoid(),
+        status: 'pending'
+      })
       .returning();
     return document;
   }
