@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { signMessage } from "@/lib/web3";
 import { WalletConnect } from "@/components/wallet-connect";
-import { Share2 } from "lucide-react";
+import { Share2, Download } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 import { type WalletType } from "@/lib/web3";
 import { useWallet } from "@/lib/wallet-context";
@@ -41,7 +41,15 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         timestamp,
       });
 
-      const updatedContent = `${document.content}\n\nSigned by ${address} at ${timestamp}`;
+      // Update document content with signature in a more formatted way
+      const signatureBlock = `\n\n----------------------------------------
+SIGNATURE
+Signer: ${address}
+Time: ${new Date(timestamp).toLocaleString()}
+Signature: ${signature}
+----------------------------------------`;
+
+      const updatedContent = `${document.content}${signatureBlock}`;
       await apiRequest("POST", `/api/documents/${document.id}`, {
         ...document,
         content: updatedContent,
@@ -67,6 +75,23 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     connect(address, type);
   };
 
+  const handleDownload = () => {
+    if (!document) return;
+
+    // Create a blob with the document content
+    const blob = new Blob([document.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    // Create a temporary link and trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${document.name}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (!document) return null;
 
   return (
@@ -87,6 +112,14 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
             >
               <Share2 className="h-4 w-4" />
               Share
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4" />
+              Download
             </Button>
             {!address ? (
               <WalletConnect onConnect={handleWalletConnect} />
