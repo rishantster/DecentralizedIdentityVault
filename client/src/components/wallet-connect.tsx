@@ -48,7 +48,7 @@ export function WalletConnect({ onConnect }: { onConnect: (address: string, type
         className="gap-2"
       >
         <img 
-          src="https://wallet.chainx.org/static/media/logo.12bd7143.svg" 
+          src="https://www.sporran.org/img/sporran_logo.svg" 
           alt="Sporran" 
           className="h-4 w-4"
         />
