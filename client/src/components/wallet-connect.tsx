@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useCallback, useState } from "react";
 import { connectWallet, type WalletType } from "@/lib/web3";
 import { Wallet } from "lucide-react";
-import { SiPolkadot } from "react-icons/si";
+import { SiPolkadot, SiKubernetes } from "react-icons/si";
 
 export function WalletConnect({ onConnect }: { onConnect: (address: string, type: WalletType) => void }) {
   const [connecting, setConnecting] = useState(false);
@@ -47,11 +47,7 @@ export function WalletConnect({ onConnect }: { onConnect: (address: string, type
         variant="outline"
         className="gap-2"
       >
-        <img 
-          src="https://www.sporran.org/img/sporran_logo.svg" 
-          alt="Sporran" 
-          className="h-4 w-4"
-        />
+        <SiKubernetes className="h-4 w-4" />
         {connecting ? "Connecting..." : "Connect with Sporran"}
       </Button>
     </div>
