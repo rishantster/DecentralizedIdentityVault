@@ -18,13 +18,25 @@ export async function verifyWalletOwnership(address: string, type: WalletType): 
 export async function verifyDocumentSignature(documentContent: string, signer: string, signature: string, type: WalletType): Promise<boolean> {
   try {
     if (type === 'metamask') {
+      if (!window.ethereum) {
+        toast({
+          title: "MetaMask not found",
+          description: "Please install MetaMask to verify signatures",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       // Get the message part from the document content (everything before === SIGNATURES ===)
       const [message] = documentContent.split('\n\n=== SIGNATURES ===');
 
-      // Recover the address from the signature
+      // For MetaMask, we need to use the same message format as when signing
+      const signedMessage = `Signing document with content:\n${message}`;
+
+      // Recover the address from the signature using personal_ecRecover
       const recoveredAddress = await window.ethereum.request({
         method: "personal_ecRecover",
-        params: [message, signature]
+        params: [signedMessage, signature]
       });
 
       return recoveredAddress.toLowerCase() === signer.toLowerCase();
@@ -38,6 +50,7 @@ export async function verifyDocumentSignature(documentContent: string, signer: s
       return false;
     }
   } catch (error) {
+    console.error('Signature verification error:', error);
     toast({
       title: "Failed to verify signature",
       description: "There was an error verifying the signature",
@@ -147,9 +160,12 @@ async function connectPolkadot(type: 'polkadot' | 'sporran'): Promise<string | n
 export async function signMessage(message: string, address: string, type: WalletType): Promise<string | null> {
   try {
     if (type === 'metamask') {
+      // For documents, we want to include the content in the message
+      const signedMessage = `Signing document with content:\n${message}`;
+
       return await window.ethereum.request({
         method: "personal_sign",
-        params: [message, address]
+        params: [signedMessage, address]
       });
     } else {
       // Polkadot/Sporran signing will be implemented in the future

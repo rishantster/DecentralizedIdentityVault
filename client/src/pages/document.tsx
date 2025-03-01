@@ -29,8 +29,11 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     mutationFn: async () => {
       if (!address || !docData || !walletType) return;
 
-      const message = `Signing document ${docData.id} - ${docData.name}`;
-      const signature = await signMessage(message, address, walletType);
+      // Get the base content without signatures
+      const [baseContent] = docData.content.split('\n\n=== SIGNATURES ===');
+      const contentToSign = baseContent || docData.content;
+
+      const signature = await signMessage(contentToSign, address, walletType);
 
       if (!signature) return;
 
@@ -43,9 +46,6 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         timestamp,
       });
 
-      // Split content to separate base content from signatures
-      const [baseContent] = docData.content.split('\n\n=== SIGNATURES ===');
-
       // Create updated content with all signatures including the new one
       const updatedSignatures = [
         ...signatures,
@@ -56,7 +56,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         `Signer: ${sig.signerAddress}\nTime: ${new Date(sig.timestamp).toLocaleString()}\nSignature: ${sig.signature}\n----------------------------------------`
       ).join('\n\n');
 
-      const updatedContent = `${baseContent || docData.content}\n\n=== SIGNATURES ===\n\n${signatureBlocks}`;
+      const updatedContent = `${contentToSign}\n\n=== SIGNATURES ===\n\n${signatureBlocks}`;
 
       // Update the document content to include the new signature
       await apiRequest("PATCH", `/api/documents/${docData.id}`, {
