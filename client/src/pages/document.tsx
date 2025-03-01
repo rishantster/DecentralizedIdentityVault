@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { signMessage, verifyDocumentSignature } from "@/lib/web3";
 import { WalletConnect } from "@/components/wallet-connect";
+import { Header } from "@/components/header";
 import { Share2, Download, Shield } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 import { type WalletType } from "@/lib/web3";
@@ -137,7 +138,9 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
   if (!docData) return null;
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
+    <>
+      <Header showBack />
+      <div className="container mx-auto p-4 space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{docData.name}</CardTitle>
@@ -209,5 +212,6 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               </CardContent>
             </Card>
           </div>
+    </>
   );
 }
