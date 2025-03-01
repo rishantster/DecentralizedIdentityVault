@@ -2,6 +2,10 @@
 
 Welcome to **DecentralizedIdentityVault**, a project aimed at providing a secure, decentralized solution for managing digital identities. This repository implements a vault for storing and managing identity data in a privacy-preserving, user-controlled manner, leveraging blockchain and decentralized technologies.
 
+## Demo
+
+[Decentralized Identity Vault](https://sign-seal-chain.replit.app/)
+
 ## Overview
 
 The DecentralizedIdentityVault is designed to empower individuals with self-sovereign identity, allowing them to securely store, manage, and share their identity credentials without relying on centralized authorities. Built with modern cryptographic techniques and decentralized frameworks, this project aims to enhance privacy, security, and interoperability in the digital identity ecosystem.
