@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { signMessage } from "@/lib/web3";
+import { signMessage, verifyDocumentSignature } from "@/lib/web3";
 import { WalletConnect } from "@/components/wallet-connect";
-import { Share2, Download } from "lucide-react";
+import { Share2, Download, Shield } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 import { type WalletType } from "@/lib/web3";
 import { useWallet } from "@/lib/wallet-context";
@@ -14,6 +14,7 @@ import { useWallet } from "@/lib/wallet-context";
 export default function DocumentPage({ params }: { params: { id: string } }) {
   const { address, walletType, connect } = useWallet();
   const { toast } = useToast();
+  const [verifying, setVerifying] = useState(false);
 
   const { data: docData } = useQuery<Document>({
     queryKey: [`/api/documents/${params.id}`],
@@ -99,6 +100,40 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleVerifySignatures = async () => {
+    if (!docData || !signatures.length) return;
+
+    setVerifying(true);
+    try {
+      const results = await Promise.all(
+        signatures.map(async (sig) => {
+          const isValid = await verifyDocumentSignature(
+            docData.content,
+            sig.signerAddress,
+            sig.signature,
+            'metamask' // Currently only supporting MetaMask verification
+          );
+          return { ...sig, isValid };
+        })
+      );
+
+      const validCount = results.filter(r => r.isValid).length;
+      toast({
+        title: `Signature Verification Result`,
+        description: `${validCount} out of ${results.length} signatures are valid.`,
+        variant: validCount === results.length ? "default" : "destructive"
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to verify signatures",
+        description: "An error occurred during verification",
+        variant: "destructive"
+      });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   if (!docData) return null;
 
   return (
@@ -128,6 +163,17 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               <Download className="h-4 w-4" />
               Download
             </Button>
+            {signatures.length > 0 && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={handleVerifySignatures}
+                disabled={verifying}
+              >
+                <Shield className="h-4 w-4" />
+                {verifying ? "Verifying..." : "Verify Signatures"}
+              </Button>
+            )}
             {!address ? (
               <WalletConnect onConnect={handleWalletConnect} />
             ) : (
@@ -146,7 +192,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               <h3 className="font-medium mb-2">Signatures:</h3>
               <ul className="text-sm text-muted-foreground">
                 {signatures.map((sig) => (
-                  <li key={sig.id}>
+                  <li key={sig.id} className="mb-1">
                     {sig.signerAddress.slice(0, 6)}...{sig.signerAddress.slice(-4)} - {new Date(sig.timestamp).toLocaleString()}
                   </li>
                 ))}

@@ -15,6 +15,38 @@ export async function verifyWalletOwnership(address: string, type: WalletType): 
   return signature !== null;
 }
 
+export async function verifyDocumentSignature(documentContent: string, signer: string, signature: string, type: WalletType): Promise<boolean> {
+  try {
+    if (type === 'metamask') {
+      // Get the message part from the document content (everything before === SIGNATURES ===)
+      const [message] = documentContent.split('\n\n=== SIGNATURES ===');
+
+      // Recover the address from the signature
+      const recoveredAddress = await window.ethereum.request({
+        method: "personal_ecRecover",
+        params: [message, signature]
+      });
+
+      return recoveredAddress.toLowerCase() === signer.toLowerCase();
+    } else {
+      // For Polkadot/Sporran, signature verification will be implemented later
+      toast({
+        title: "Signature verification not implemented",
+        description: "This feature will be available soon for Polkadot and Sporran wallets",
+        variant: "destructive"
+      });
+      return false;
+    }
+  } catch (error) {
+    toast({
+      title: "Failed to verify signature",
+      description: "There was an error verifying the signature",
+      variant: "destructive"
+    });
+    return false;
+  }
+}
+
 export async function connectWallet(type: WalletType): Promise<string | null> {
   let address: string | null = null;
 
@@ -97,7 +129,7 @@ async function connectPolkadot(type: 'polkadot' | 'sporran'): Promise<string | n
     }
 
     // For Sporran, filter only sr25519 accounts
-    const accounts = type === 'sporran' 
+    const accounts = type === 'sporran'
       ? allAccounts.filter(acc => acc.type === 'sr25519')
       : allAccounts;
 
