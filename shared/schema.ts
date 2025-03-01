@@ -1,11 +1,11 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  content: text("content").notNull(), // Base64 encoded PDF
+  content: text("content").notNull(), // Plain text content
   createdBy: text("created_by").notNull(), // Wallet address
   shareableLink: text("shareable_link").notNull().unique(),
   status: text("status").notNull().default('pending'), // pending, signed
@@ -17,7 +17,6 @@ export const signatures = pgTable("signatures", {
   signerAddress: text("signer_address").notNull(),
   signature: text("signature").notNull(),
   timestamp: text("timestamp").notNull(),
-  position: jsonb("position").notNull(), // {x, y, page}
 });
 
 export const insertDocumentSchema = createInsertSchema(documents).omit({

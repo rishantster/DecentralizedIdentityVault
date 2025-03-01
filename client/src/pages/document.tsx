@@ -1,23 +1,16 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { DocumentViewer } from "@/components/document-viewer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { signMessage } from "@/lib/web3";
 import { WalletConnect } from "@/components/wallet-connect";
-import { base64ToBlob, addSignatureToDocument } from "@/lib/pdf";
 import { Share2 } from "lucide-react";
 import type { Document, Signature } from "@shared/schema";
 
 export default function DocumentPage({ params }: { params: { id: string } }) {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [signaturePosition, setSignaturePosition] = useState<{
-    x: number;
-    y: number;
-    page: number;
-  } | null>(null);
   const { toast } = useToast();
 
   const { data: document } = useQuery<Document>({
@@ -31,11 +24,9 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
   const signatureMutation = useMutation({
     mutationFn: async () => {
-      if (!walletAddress || !signaturePosition || !document) return;
+      if (!walletAddress || !document) return;
 
-      const message = `Signing document ${document.id} at position ${JSON.stringify(
-        signaturePosition
-      )}`;
+      const message = `Signing document ${document.id} - ${document.name}`;
       const signature = await signMessage(message, walletAddress);
 
       if (!signature) return;
@@ -46,18 +37,13 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         signerAddress: walletAddress,
         signature,
         timestamp,
-        position: signaturePosition,
       });
 
-      // Update PDF with visual signature
-      const updatedPdf = await addSignatureToDocument(
-        document.content,
-        { address: walletAddress, timestamp, position: signaturePosition }
-      );
-
+      // Update document content with signature
+      const updatedContent = `${document.content}\n\nSigned by ${walletAddress} at ${timestamp}`;
       await apiRequest("POST", `/api/documents/${document.id}`, {
         ...document,
-        content: updatedPdf,
+        content: updatedContent,
       });
 
       // Invalidate queries to refetch data
@@ -78,8 +64,6 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
   });
 
   if (!document) return null;
-
-  const documentUrl = URL.createObjectURL(base64ToBlob(document.content));
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -105,7 +89,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
             ) : (
               <Button
                 onClick={() => signatureMutation.mutate()}
-                disabled={!signaturePosition || signatureMutation.isPending}
+                disabled={signatureMutation.isPending}
               >
                 {signatureMutation.isPending ? "Signing..." : "Sign Document"}
               </Button>
@@ -125,10 +109,9 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
               </ul>
             </div>
           )}
-          <DocumentViewer
-            documentUrl={documentUrl}
-            onSignaturePosition={setSignaturePosition}
-          />
+          <div className="border rounded-lg p-4 bg-muted/50 whitespace-pre-wrap font-mono text-sm">
+            {document.content}
+          </div>
         </CardContent>
       </Card>
     </div>
