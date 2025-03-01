@@ -1,5 +1,7 @@
 import { nanoid } from "nanoid";
-import { Document, InsertDocument, Signature, InsertSignature } from "@shared/schema";
+import { documents, signatures, type Document, type Signature, type InsertDocument, type InsertSignature } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   createDocument(doc: InsertDocument): Promise<Document>;
@@ -11,83 +13,74 @@ export interface IStorage {
   updateDocument(id: number, updates: Partial<Document>): Promise<Document>;
 }
 
-export class MemStorage implements IStorage {
-  private documents: Map<number, Document>;
-  private signatures: Map<number, Signature>;
-  private currentDocId: number;
-  private currentSigId: number;
-
-  constructor() {
-    this.documents = new Map();
-    this.signatures = new Map();
-    this.currentDocId = 1;
-    this.currentSigId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async createDocument(doc: InsertDocument): Promise<Document> {
-    const id = this.currentDocId++;
-    const shareableLink = nanoid();
-    const document: Document = {
-      ...doc,
-      id,
-      shareableLink,
-      status: 'pending'
-    };
-    this.documents.set(id, document);
+    const [document] = await db
+      .insert(documents)
+      .values(doc)
+      .returning();
     return document;
   }
 
   async getDocument(id: number): Promise<Document | undefined> {
-    return this.documents.get(id);
+    const [document] = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.id, id));
+    return document;
   }
 
   async getDocumentByShareableLink(link: string): Promise<Document | undefined> {
-    return Array.from(this.documents.values()).find(
-      (doc) => doc.shareableLink === link
-    );
+    const [document] = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.shareableLink, link));
+    return document;
   }
 
   async getDocumentsByCreator(address: string): Promise<Document[]> {
-    return Array.from(this.documents.values())
-      .filter(doc => doc.createdBy === address)
-      .sort((a, b) => b.id - a.id); // Sort by id descending (newest first)
+    return await db
+      .select()
+      .from(documents)
+      .where(eq(documents.createdBy, address))
+      .orderBy(documents.id);
   }
 
   async getSignatures(documentId: number): Promise<Signature[]> {
-    return Array.from(this.signatures.values()).filter(
-      (sig) => sig.documentId === documentId
-    );
+    return await db
+      .select()
+      .from(signatures)
+      .where(eq(signatures.documentId, documentId));
   }
 
   async addSignature(signature: InsertSignature): Promise<Signature> {
-    const id = this.currentSigId++;
-    const newSignature: Signature = { ...signature, id };
-    this.signatures.set(id, newSignature);
+    const [newSignature] = await db
+      .insert(signatures)
+      .values(signature)
+      .returning();
 
     // Update document status
-    const document = this.documents.get(signature.documentId);
-    if (document) {
-      document.status = 'signed';
-      this.documents.set(document.id, document);
-    }
+    await db
+      .update(documents)
+      .set({ status: 'signed' })
+      .where(eq(documents.id, signature.documentId));
 
     return newSignature;
   }
 
   async updateDocument(id: number, updates: Partial<Document>): Promise<Document> {
-    const document = this.documents.get(id);
+    const [document] = await db
+      .update(documents)
+      .set(updates)
+      .where(eq(documents.id, id))
+      .returning();
+
     if (!document) {
       throw new Error('Document not found');
     }
 
-    const updatedDocument = {
-      ...document,
-      ...updates
-    };
-
-    this.documents.set(id, updatedDocument);
-    return updatedDocument;
+    return document;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
