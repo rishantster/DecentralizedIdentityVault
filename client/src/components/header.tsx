@@ -10,9 +10,9 @@ export function Header({ showBack }: HeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container flex h-16 max-w-screen-xl items-center">
-        <div className="flex flex-1 items-center gap-6">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="flex flex-1 items-center gap-2">
           {showBack && (
             <Button
               variant="ghost"
@@ -24,11 +24,9 @@ export function Header({ showBack }: HeaderProps) {
               Back
             </Button>
           )}
-          <div className="flex items-center gap-3 font-semibold">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
-            <span className="text-lg">Identity Vault</span>
+          <div className="flex items-center gap-2 font-semibold">
+            <FileText className="h-5 w-5" />
+            <span>Identity Vault</span>
           </div>
         </div>
       </div>
