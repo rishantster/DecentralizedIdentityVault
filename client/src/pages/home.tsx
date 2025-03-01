@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { WalletConnect } from "@/components/wallet-connect";
-import { FileText, AlertCircle, Share2 } from "lucide-react";
+import { FileText, Shield, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -53,9 +53,9 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight">Document Signing Platform</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Decentralized Identity Vault</h1>
             <p className="text-muted-foreground text-lg">
-              Create and sign documents securely using blockchain technology
+              Secure your digital identity and documents with blockchain verification
             </p>
           </div>
 
@@ -63,10 +63,10 @@ export default function Home() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Create New Document
+                Create Identity Document
               </CardTitle>
               <CardDescription>
-                Connect your wallet to create and sign documents
+                Connect your wallet to create and verify your identity documents
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -81,7 +81,7 @@ export default function Home() {
                       Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                     </p>
                     <Input
-                      placeholder="Document Name"
+                      placeholder="Document Title"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
@@ -99,7 +99,7 @@ export default function Home() {
                     onClick={handleCreateDocument}
                     disabled={creating || !content.trim() || !name.trim()}
                   >
-                    {creating ? "Creating..." : "Create Document"}
+                    {creating ? "Creating..." : "Create & Sign Document"}
                   </Button>
                 </>
               )}
@@ -108,19 +108,19 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FeatureCard
-              icon={<AlertCircle className="h-8 w-8" />}
-              title="Secure"
-              description="Documents are signed using blockchain technology"
+              icon={<Shield className="h-8 w-8" />}
+              title="Decentralized"
+              description="Your identity, secured by blockchain technology"
             />
             <FeatureCard
               icon={<FileText className="h-8 w-8" />}
-              title="Simple"
-              description="Create and sign documents in minutes"
+              title="Verifiable"
+              description="Cryptographically signed identity documents"
             />
             <FeatureCard
               icon={<Share2 className="h-8 w-8" />}
               title="Shareable"
-              description="Share documents securely with others"
+              description="Share your verified credentials securely"
             />
           </div>
         </div>
