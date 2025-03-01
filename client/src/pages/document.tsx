@@ -41,15 +41,24 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
         timestamp,
       });
 
-      // Update document content with signature in a more formatted way
-      const signatureBlock = `\n\n----------------------------------------
-SIGNATURE
-Signer: ${address}
-Time: ${new Date(timestamp).toLocaleString()}
-Signature: ${signature}
-----------------------------------------`;
+      // Split content to separate base content from signatures
+      const [baseContent] = docData.content.split('\n\n=== SIGNATURES ===');
 
-      const updatedContent = `${docData.content}${signatureBlock}`;
+      // Create updated content with all signatures including the new one
+      const updatedSignatures = [
+        ...signatures,
+        { signerAddress: address, signature, timestamp }
+      ];
+
+      const signatureBlocks = updatedSignatures.map(sig => 
+        `Signer: ${sig.signerAddress}
+Time: ${new Date(sig.timestamp).toLocaleString()}
+Signature: ${sig.signature}
+----------------------------------------`
+      ).join('\n\n');
+
+      const updatedContent = `${baseContent || docData.content}\n\n=== SIGNATURES ===\n\n${signatureBlocks}`;
+
       await apiRequest("POST", `/api/documents/${docData.id}`, {
         ...docData,
         content: updatedContent,
